@@ -1,0 +1,29 @@
+# Configuration Supabase locale (CLI). Voir https://supabase.com/docs/guides/cli/config
+project_id = "feuille-de-route"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[realtime]
+enabled = true
+
+# Aucune authentification utilisateur : l'accès se fait via la clé anon publique
+# et les policies RLS. On laisse le service auth actif (requis par la stack) mais
+# aucune connexion n'est demandée dans l'application.
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]

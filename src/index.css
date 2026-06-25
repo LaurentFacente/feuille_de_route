@@ -1,0 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark cyberpunk / Linear-inspired palette */
+    --background: 230 25% 6%;
+    --foreground: 220 20% 96%;
+
+    --card: 230 22% 9%;
+    --card-foreground: 220 20% 96%;
+
+    --muted: 230 18% 14%;
+    --muted-foreground: 220 12% 60%;
+
+    --accent: 230 18% 16%;
+    --accent-foreground: 220 20% 96%;
+
+    --primary: 265 90% 66%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 230 18% 16%;
+    --secondary-foreground: 220 20% 96%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 230 18% 18%;
+    --input: 230 18% 18%;
+    --ring: 265 90% 66%;
+
+    /* Status palette */
+    --status-done: 152 70% 45%;
+    --status-progress: 199 95% 55%;
+    --status-upcoming: 32 95% 55%;
+    --status-late: 0 84% 60%;
+
+    --radius: 0.85rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-image:
+      radial-gradient(circle at 12% 18%, hsl(265 90% 66% / 0.10), transparent 42%),
+      radial-gradient(circle at 88% 8%, hsl(199 95% 55% / 0.08), transparent 40%),
+      radial-gradient(circle at 50% 110%, hsl(330 90% 60% / 0.07), transparent 45%);
+    background-attachment: fixed;
+    /* Avoid rubber-band scroll quirks + double-tap zoom on touch UIs */
+    overscroll-behavior-y: none;
+  }
+
+  /* Snappier, cleaner taps on touch devices */
+  button,
+  a,
+  [role='button'],
+  input,
+  textarea,
+  select,
+  label {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Prevent iOS Safari from auto-zooming when focusing form fields:
+     any field smaller than 16px triggers the zoom, so we floor it on phones. */
+  @media (max-width: 640px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full;
+    background: hsl(var(--border));
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Safe-area helpers for notched phones / iPad home indicator */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+  .min-h-screen-safe {
+    min-height: 100svh;
+  }
+  /* Hide scrollbar while keeping scroll (used for horizontal carousels) */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
