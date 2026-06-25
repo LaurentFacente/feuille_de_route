@@ -44,6 +44,7 @@ export function stepFromRow(row: StepRow, comments: Comment[]): Step {
     location: row.location ?? undefined,
     participants: row.participants ?? [],
     equipment: row.equipment ?? [],
+    vehicles: row.vehicles ?? [],
     details: row.details ?? [],
     override: toOverride(row.override),
     shiftMinutes: row.shift_minutes,
@@ -104,6 +105,7 @@ export function stepPatchToRow(patch: Partial<Step>): Partial<StepRow> {
   if (patch.location !== undefined) row.location = patch.location ?? null
   if (patch.participants !== undefined) row.participants = patch.participants
   if (patch.equipment !== undefined) row.equipment = patch.equipment
+  if (patch.vehicles !== undefined) row.vehicles = patch.vehicles
   if (patch.details !== undefined) row.details = patch.details
   if (patch.override !== undefined) row.override = patch.override
   if (patch.shiftMinutes !== undefined) row.shift_minutes = patch.shiftMinutes

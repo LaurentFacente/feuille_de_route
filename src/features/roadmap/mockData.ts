@@ -27,6 +27,7 @@ interface StepSeed {
   location?: string
   participants?: string[]
   equipment?: string[]
+  vehicles?: string[]
   details?: string[]
 }
 
@@ -40,6 +41,7 @@ function step(seed: StepSeed): Step {
     location: seed.location,
     participants: seed.participants ?? [],
     equipment: seed.equipment ?? [],
+    vehicles: seed.vehicles ?? [],
     details: seed.details ?? [],
     override: 'auto',
     shiftMinutes: 0,

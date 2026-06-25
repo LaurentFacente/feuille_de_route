@@ -130,7 +130,7 @@ export function ChecklistsPage() {
         </div>
         <Progress value={overall.ratio * 100} indicatorClassName="bg-status-done" />
         <div className="mt-2 text-sm text-muted-foreground">
-          {overall.done}/{overall.total} éléments prêts · sauvegarde automatique
+          {overall.done}/{overall.total} éléments prêts · progression personnelle
         </div>
       </div>
 

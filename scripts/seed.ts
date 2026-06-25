@@ -84,6 +84,7 @@ async function seed() {
             location: s.location ?? null,
             participants: s.participants,
             equipment: s.equipment,
+            vehicles: s.vehicles,
             details: s.details,
             override: s.override,
             shift_minutes: s.shiftMinutes,

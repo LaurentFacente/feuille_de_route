@@ -5,6 +5,7 @@ import { createLogger } from '@/api/logger'
 import {
   bulkSetStepShift,
   deletePerson,
+  deleteStep,
   deleteVehicle,
   deleteChecklistItem,
   fetchRoadmap,
@@ -12,9 +13,9 @@ import {
   insertChecklistItem,
   insertComment,
   insertPerson,
+  insertStep,
   insertVehicle,
   replaceRoadmap,
-  setChecklistItemChecked,
   updatePersonRow,
   updateProjectRow,
   updateStepRow,
@@ -22,9 +23,16 @@ import {
 } from '@/api/roadmap.api'
 import { stepPatchToRow } from '@/api/mappers'
 import { subscribeToRoadmap } from '@/api/realtime'
+import { defaultNewStep } from '@/features/planning/step.utils'
+import {
+  applyChecklistLocalState,
+  clearChecklistLocalState,
+  setItemCheckedLocal,
+} from '@/features/checklists/checklistLocal.storage'
 import { mockRoadmap, ROADMAP_VERSION } from './mockData'
 import type {
   ChecklistCategory,
+  Day,
   Person,
   Roadmap,
   Step,
@@ -50,6 +58,10 @@ interface RoadmapState {
   roadmap: Roadmap
   status: LoadStatus
   error?: string
+  /** Step ids created locally, not yet persisted to the database. */
+  pendingStepIds: string[]
+  pendingPersonIds: string[]
+  pendingVehicleIds: string[]
 
   // Chargement / synchro
   load: () => Promise<void>
@@ -58,19 +70,24 @@ interface RoadmapState {
   updateProject: (patch: Partial<Pick<Roadmap, 'projectName' | 'subtitle'>>) => void
 
   // Steps
-  updateStep: (stepId: string, patch: Partial<Step>) => void
+  addStep: (dayId: Day['id'], step?: Partial<Step>) => string
+  saveStep: (stepId: string, patch: Partial<Step>) => void
+  cancelStep: (stepId: string) => void
+  removeStep: (stepId: string) => void
   setStepOverride: (stepId: string, override: StepStatusOverride) => void
   shiftFromStep: (stepId: string, minutes: number) => void
   addComment: (stepId: string, author: string, text: string) => void
 
   // Team
-  addPerson: (person?: Partial<Person>) => void
-  updatePerson: (id: string, patch: Partial<Person>) => void
+  addPerson: (person?: Partial<Person>) => string
+  savePerson: (id: string, patch: Partial<Person>) => void
+  cancelPerson: (id: string) => void
   removePerson: (id: string) => void
 
   // Vehicles
-  addVehicle: (vehicle?: Partial<Vehicle>) => void
-  updateVehicle: (id: string, patch: Partial<Vehicle>) => void
+  addVehicle: (vehicle?: Partial<Vehicle>) => string
+  saveVehicle: (id: string, patch: Partial<Vehicle>) => void
+  cancelVehicle: (id: string) => void
   removeVehicle: (id: string) => void
 
   // Checklists
@@ -84,6 +101,10 @@ interface RoadmapState {
   resetRoadmap: () => void
 }
 
+function mapDays(roadmap: Roadmap, fn: (day: Roadmap['days'][number]) => Roadmap['days'][number]): Roadmap {
+  return { ...roadmap, days: roadmap.days.map(fn) }
+}
+
 function mapSteps(roadmap: Roadmap, fn: (step: Step) => Step): Roadmap {
   return {
     ...roadmap,
@@ -92,6 +113,14 @@ function mapSteps(roadmap: Roadmap, fn: (step: Step) => Step): Roadmap {
 }
 
 const PROJECT_ID = env.projectId
+
+function findStep(roadmap: Roadmap, stepId: string): { day: Day; step: Step; index: number } | null {
+  for (const day of roadmap.days) {
+    const index = day.steps.findIndex((s) => s.id === stepId)
+    if (index >= 0) return { day, step: day.steps[index]!, index }
+  }
+  return null
+}
 
 export const useRoadmapStore = create<RoadmapState>()((set, get) => {
   /**
@@ -108,12 +137,39 @@ export const useRoadmapStore = create<RoadmapState>()((set, get) => {
   return {
     roadmap: EMPTY_ROADMAP,
     status: 'idle',
+    pendingStepIds: [],
+    pendingPersonIds: [],
+    pendingVehicleIds: [],
 
     load: async () => {
       set({ status: 'loading' })
       try {
-        const roadmap = await fetchRoadmap(PROJECT_ID)
-        set({ roadmap, status: 'ready', error: undefined })
+        const { pendingStepIds, pendingPersonIds, pendingVehicleIds, roadmap: prev } = get()
+        const fetched = await fetchRoadmap(PROJECT_ID)
+
+        let roadmap = fetched
+        if (pendingStepIds.length > 0) {
+          roadmap = {
+            ...roadmap,
+            days: roadmap.days.map((day) => {
+              const prevDay = prev.days.find((d) => d.id === day.id)
+              const localOnly = prevDay?.steps.filter((s) => pendingStepIds.includes(s.id)) ?? []
+              return localOnly.length ? { ...day, steps: [...day.steps, ...localOnly] } : day
+            }),
+          }
+        }
+        if (pendingPersonIds.length > 0) {
+          const localPeople = prev.team.filter((p) => pendingPersonIds.includes(p.id))
+          roadmap = { ...roadmap, team: [...roadmap.team, ...localPeople] }
+        }
+        if (pendingVehicleIds.length > 0) {
+          const localVehicles = prev.vehicles.filter((v) => pendingVehicleIds.includes(v.id))
+          roadmap = { ...roadmap, vehicles: [...roadmap.vehicles, ...localVehicles] }
+        }
+
+        roadmap = { ...roadmap, checklists: applyChecklistLocalState(roadmap.checklists) }
+
+        set({ roadmap, status: 'ready', error: undefined, pendingStepIds, pendingPersonIds, pendingVehicleIds })
       } catch (e) {
         log.error('chargement roadmap échoué', e)
         set({ status: 'error', error: e instanceof Error ? e.message : 'Erreur de chargement' })
@@ -130,13 +186,79 @@ export const useRoadmapStore = create<RoadmapState>()((set, get) => {
       )
     },
 
-    updateStep: (stepId, patch) => {
+    addStep: (dayId, partial) => {
+      const day = get().roadmap.days.find((d) => d.id === dayId)
+      if (!day) return ''
+      const id = uid('step')
+      const base: Step = { id, comments: [], ...defaultNewStep(day), ...partial }
       set((s) => ({
-        roadmap: mapSteps(s.roadmap, (step) =>
-          step.id === stepId ? { ...step, ...patch } : step,
+        pendingStepIds: [...s.pendingStepIds, id],
+        roadmap: mapDays(s.roadmap, (d) =>
+          d.id === dayId ? { ...d, steps: [...d.steps, base] } : d,
         ),
       }))
-      persist(() => updateStepRow(stepId, stepPatchToRow(patch)))
+      return id
+    },
+
+    saveStep: (stepId, patch) => {
+      const located = findStep(get().roadmap, stepId)
+      if (!located) return
+      const merged: Step = { ...located.step, ...patch }
+      const isPending = get().pendingStepIds.includes(stepId)
+
+      set((s) => ({
+        pendingStepIds: isPending
+          ? s.pendingStepIds.filter((id) => id !== stepId)
+          : s.pendingStepIds,
+        roadmap: mapSteps(s.roadmap, (step) => (step.id === stepId ? merged : step)),
+      }))
+
+      if (isPending) {
+        persist(() =>
+          insertStep({
+            id: stepId,
+            day_id: located.day.id,
+            title: merged.title,
+            phase: merged.phase,
+            start_at: merged.start || null,
+            end_at: merged.end || null,
+            location: merged.location ?? null,
+            participants: merged.participants,
+            equipment: merged.equipment,
+            vehicles: merged.vehicles,
+            details: merged.details,
+            override: merged.override,
+            shift_minutes: merged.shiftMinutes,
+            ordre: located.index,
+          }),
+        )
+      } else {
+        persist(() => updateStepRow(stepId, stepPatchToRow(patch)))
+      }
+    },
+
+    cancelStep: (stepId) => {
+      if (get().pendingStepIds.includes(stepId)) {
+        set((s) => ({
+          pendingStepIds: s.pendingStepIds.filter((id) => id !== stepId),
+          roadmap: mapDays(s.roadmap, (d) => ({
+            ...d,
+            steps: d.steps.filter((st) => st.id !== stepId),
+          })),
+        }))
+      }
+    },
+
+    removeStep: (stepId) => {
+      const isPending = get().pendingStepIds.includes(stepId)
+      set((s) => ({
+        pendingStepIds: s.pendingStepIds.filter((id) => id !== stepId),
+        roadmap: mapDays(s.roadmap, (d) => ({
+          ...d,
+          steps: d.steps.filter((st) => st.id !== stepId),
+        })),
+      }))
+      if (!isPending) persist(() => deleteStep(stepId))
     },
 
     setStepOverride: (stepId, override) => {
@@ -200,45 +322,70 @@ export const useRoadmapStore = create<RoadmapState>()((set, get) => {
         availability: person?.availability,
         vehicle: person?.vehicle,
       }
-      const ordre = get().roadmap.team.length
-      set((s) => ({ roadmap: { ...s.roadmap, team: [...s.roadmap.team, newPerson] } }))
-      persist(() =>
-        insertPerson({
-          id,
-          project_id: PROJECT_ID,
-          name: newPerson.name,
-          role: newPerson.role,
-          phone: newPerson.phone ?? null,
-          availability: newPerson.availability ?? null,
-          vehicle: newPerson.vehicle ?? null,
-          ordre,
-        }),
-      )
+      set((s) => ({
+        pendingPersonIds: [...s.pendingPersonIds, id],
+        roadmap: { ...s.roadmap, team: [...s.roadmap.team, newPerson] },
+      }))
+      return id
     },
 
-    updatePerson: (id, patch) => {
+    savePerson: (id, patch) => {
+      const index = get().roadmap.team.findIndex((p) => p.id === id)
+      if (index < 0) return
+      const merged: Person = { ...get().roadmap.team[index]!, ...patch }
+      const isPending = get().pendingPersonIds.includes(id)
+
       set((s) => ({
+        pendingPersonIds: isPending
+          ? s.pendingPersonIds.filter((pid) => pid !== id)
+          : s.pendingPersonIds,
         roadmap: {
           ...s.roadmap,
-          team: s.roadmap.team.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+          team: s.roadmap.team.map((p) => (p.id === id ? merged : p)),
         },
       }))
-      persist(() =>
-        updatePersonRow(id, {
-          name: patch.name,
-          role: patch.role,
-          phone: patch.phone,
-          availability: patch.availability,
-          vehicle: patch.vehicle,
-        }),
-      )
+
+      if (isPending) {
+        persist(() =>
+          insertPerson({
+            id,
+            project_id: PROJECT_ID,
+            name: merged.name,
+            role: merged.role,
+            phone: merged.phone ?? null,
+            availability: merged.availability ?? null,
+            vehicle: merged.vehicle ?? null,
+            ordre: index,
+          }),
+        )
+      } else {
+        persist(() =>
+          updatePersonRow(id, {
+            name: merged.name,
+            role: merged.role,
+            phone: merged.phone,
+            availability: merged.availability,
+            vehicle: merged.vehicle,
+          }),
+        )
+      }
+    },
+
+    cancelPerson: (id) => {
+      if (!get().pendingPersonIds.includes(id)) return
+      set((s) => ({
+        pendingPersonIds: s.pendingPersonIds.filter((pid) => pid !== id),
+        roadmap: { ...s.roadmap, team: s.roadmap.team.filter((p) => p.id !== id) },
+      }))
     },
 
     removePerson: (id) => {
+      const isPending = get().pendingPersonIds.includes(id)
       set((s) => ({
+        pendingPersonIds: s.pendingPersonIds.filter((pid) => pid !== id),
         roadmap: { ...s.roadmap, team: s.roadmap.team.filter((p) => p.id !== id) },
       }))
-      persist(() => deletePerson(id))
+      if (!isPending) persist(() => deletePerson(id))
     },
 
     addVehicle: (vehicle) => {
@@ -250,43 +397,68 @@ export const useRoadmapStore = create<RoadmapState>()((set, get) => {
         passengers: vehicle?.passengers ?? [],
         cargo: vehicle?.cargo ?? [],
       }
-      const ordre = get().roadmap.vehicles.length
-      set((s) => ({ roadmap: { ...s.roadmap, vehicles: [...s.roadmap.vehicles, newVehicle] } }))
-      persist(() =>
-        insertVehicle({
-          id,
-          project_id: PROJECT_ID,
-          name: newVehicle.name,
-          driver: newVehicle.driver ?? null,
-          passengers: newVehicle.passengers,
-          cargo: newVehicle.cargo,
-          ordre,
-        }),
-      )
+      set((s) => ({
+        pendingVehicleIds: [...s.pendingVehicleIds, id],
+        roadmap: { ...s.roadmap, vehicles: [...s.roadmap.vehicles, newVehicle] },
+      }))
+      return id
     },
 
-    updateVehicle: (id, patch) => {
+    saveVehicle: (id, patch) => {
+      const index = get().roadmap.vehicles.findIndex((v) => v.id === id)
+      if (index < 0) return
+      const merged: Vehicle = { ...get().roadmap.vehicles[index]!, ...patch }
+      const isPending = get().pendingVehicleIds.includes(id)
+
       set((s) => ({
+        pendingVehicleIds: isPending
+          ? s.pendingVehicleIds.filter((vid) => vid !== id)
+          : s.pendingVehicleIds,
         roadmap: {
           ...s.roadmap,
-          vehicles: s.roadmap.vehicles.map((v) => (v.id === id ? { ...v, ...patch } : v)),
+          vehicles: s.roadmap.vehicles.map((v) => (v.id === id ? merged : v)),
         },
       }))
-      persist(() =>
-        updateVehicleRow(id, {
-          name: patch.name,
-          driver: patch.driver,
-          passengers: patch.passengers,
-          cargo: patch.cargo,
-        }),
-      )
+
+      if (isPending) {
+        persist(() =>
+          insertVehicle({
+            id,
+            project_id: PROJECT_ID,
+            name: merged.name,
+            driver: merged.driver ?? null,
+            passengers: merged.passengers,
+            cargo: merged.cargo,
+            ordre: index,
+          }),
+        )
+      } else {
+        persist(() =>
+          updateVehicleRow(id, {
+            name: merged.name,
+            driver: merged.driver,
+            passengers: merged.passengers,
+            cargo: merged.cargo,
+          }),
+        )
+      }
+    },
+
+    cancelVehicle: (id) => {
+      if (!get().pendingVehicleIds.includes(id)) return
+      set((s) => ({
+        pendingVehicleIds: s.pendingVehicleIds.filter((vid) => vid !== id),
+        roadmap: { ...s.roadmap, vehicles: s.roadmap.vehicles.filter((v) => v.id !== id) },
+      }))
     },
 
     removeVehicle: (id) => {
+      const isPending = get().pendingVehicleIds.includes(id)
       set((s) => ({
+        pendingVehicleIds: s.pendingVehicleIds.filter((vid) => vid !== id),
         roadmap: { ...s.roadmap, vehicles: s.roadmap.vehicles.filter((v) => v.id !== id) },
       }))
-      persist(() => deleteVehicle(id))
+      if (!isPending) persist(() => deleteVehicle(id))
     },
 
     toggleChecklistItem: (categoryId, itemId) => {
@@ -308,7 +480,7 @@ export const useRoadmapStore = create<RoadmapState>()((set, get) => {
           ),
         },
       }))
-      persist(() => setChecklistItemChecked(itemId, nextChecked))
+      setItemCheckedLocal(itemId, nextChecked)
     },
 
     addChecklistItem: (categoryId, label) => {
@@ -363,6 +535,7 @@ export const useRoadmapStore = create<RoadmapState>()((set, get) => {
     },
 
     resetRoadmap: () => {
+      clearChecklistLocalState()
       set({ roadmap: mockRoadmap })
       persist(async () => {
         await replaceRoadmap(PROJECT_ID, mockRoadmap)

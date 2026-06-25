@@ -103,6 +103,31 @@ export async function updateStepRow(id: string, patch: Partial<StepRow>): Promis
   log.info('step updated', { id })
 }
 
+export async function insertStep(row: {
+  id: string
+  day_id: string
+  title: string
+  phase: string
+  start_at: string | null
+  end_at: string | null
+  location?: string | null
+  participants: string[]
+  equipment: string[]
+  vehicles: string[]
+  details: string[]
+  override: string
+  shift_minutes: number
+  ordre: number
+}): Promise<void> {
+  unwrap(await supabase.from('steps').insert(row).select().single())
+  log.info('step created', { id: row.id, dayId: row.day_id })
+}
+
+export async function deleteStep(id: string): Promise<void> {
+  unwrap(await supabase.from('steps').delete().eq('id', id).select().single())
+  log.info('step deleted', { id })
+}
+
 export async function bulkSetStepShift(entries: { id: string; shift_minutes: number }[]): Promise<void> {
   if (entries.length === 0) return
   await Promise.all(
@@ -259,6 +284,7 @@ export async function replaceRoadmap(projectId: string, roadmap: Roadmap): Promi
               location: s.location ?? null,
               participants: s.participants,
               equipment: s.equipment,
+              vehicles: s.vehicles,
               details: s.details,
               override: s.override,
               shift_minutes: s.shiftMinutes,

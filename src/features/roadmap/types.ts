@@ -27,6 +27,8 @@ export interface Step {
   /** Free-form participant names (kept flexible, matched to team by name) */
   participants: string[]
   equipment: string[]
+  /** Vehicle names assigned to this step */
+  vehicles: string[]
   /** Detail bullet points (plans, sub-steps, objectives) */
   details: string[]
   /** Manual control over the auto status (delay management) */

@@ -52,6 +52,7 @@ export type StepRow = {
   location: string | null
   participants: string[]
   equipment: string[]
+  vehicles: string[]
   details: string[]
   override: string
   shift_minutes: number
@@ -194,8 +195,6 @@ export const REALTIME_TABLES = [
   'people',
   'vehicles',
   'materials',
-  'checklist_categories',
-  'checklist_items',
   'comments',
   'locations',
   'step_people',
