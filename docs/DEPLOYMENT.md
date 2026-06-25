@@ -11,7 +11,7 @@ Objectif : mettre l'application en ligne, partagée et temps réel, en moins de
 
 ```bash
 npx supabase login
-npx supabase link --project-ref <ref-du-projet>
+npx supabase link --project-ref <bifouveizpilfulvspys>
 npm run db:push        # applique 0001_init.sql + 0002_rls_realtime.sql
 ```
 
