@@ -1,13 +1,16 @@
 import { motion } from 'framer-motion'
-import { CalendarDays, Hourglass, AlertTriangle } from 'lucide-react'
+import { CalendarDays, Hourglass, AlertTriangle, PanelLeft } from 'lucide-react'
 import { useRoadmapStore } from '@/features/roadmap/store'
+import { useSidebar } from '@/components/layout/SidebarProvider'
 import { useTracker } from '@/hooks/useTracker'
 import { useNow } from '@/hooks/useNow'
 import { formatClock, formatLongCountdown, formatLongDate } from '@/lib/time'
 import { delayMinutes } from '@/features/roadmap/roadmap.utils'
+import { Button } from '@/components/ui/button'
 
 export function TopBar() {
   const now = useNow()
+  const { open, toggle } = useSidebar()
   const projectName = useRoadmapStore((s) => s.roadmap.projectName)
   const subtitle = useRoadmapStore((s) => s.roadmap.subtitle)
   const { current, lateSteps, weekend } = useTracker()
@@ -19,11 +22,24 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 glass pt-safe">
       <div className="flex items-center justify-between gap-4 px-4 py-3 md:px-6">
-        <div className="min-w-0">
-          <h1 className="truncate text-base font-extrabold tracking-tight md:text-lg">
-            {projectName}
-          </h1>
-          <p className="hidden truncate text-xs text-muted-foreground sm:block">{subtitle}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="hidden size-9 shrink-0 md:inline-flex"
+            onClick={toggle}
+            aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={open}
+          >
+            <PanelLeft className="size-5" />
+          </Button>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-extrabold tracking-tight md:text-lg">
+              {projectName}
+            </h1>
+            <p className="hidden truncate text-xs text-muted-foreground sm:block">{subtitle}</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
