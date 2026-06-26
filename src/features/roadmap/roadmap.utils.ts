@@ -24,12 +24,10 @@ export function effectiveEnd(step: Step): string {
 /**
  * Per-step status.
  *
- * The model keeps the timeline clean (past steps auto-complete) while still
- * surfacing real delays: a step is only "late" when it has overrun AND no later
- * step has started yet (it is the frontier we are blocked on). `maxStartedStart`
- * is the latest start time among steps that have already begun.
+ * Once a step has started, it stays on the dashboard (in-progress or late) until
+ * it is manually marked done/skipped, or auto-closed via override "ignored".
  */
-export function computeStatus(step: Step, now: Date, maxStartedStart: number): StepStatus {
+export function computeStatus(step: Step, now: Date): StepStatus {
   if (step.override === 'done' || step.override === 'skipped') return 'done'
 
   const start = new Date(effectiveStart(step)).getTime()
@@ -39,22 +37,16 @@ export function computeStatus(step: Step, now: Date, maxStartedStart: number): S
   if (t < start) return 'upcoming'
   if (t < end) return 'in-progress'
 
-  // Ended and not closed out.
+  // Past scheduled end: remain visible until manually closed.
   if (step.override === 'ignored') return 'done'
-  return start >= maxStartedStart ? 'late' : 'done'
+  return 'late'
 }
 
 /** Flattened, chronologically-sorted list of every step across all days. */
 export function flattenSteps(roadmap: Roadmap, now: Date): EffectiveStep[] {
-  const t = now.getTime()
   const raw = roadmap.days.flatMap((day) =>
     day.steps.map((step) => ({ step, day })),
   )
-
-  const startedStarts = raw
-    .map(({ step }) => new Date(effectiveStart(step)).getTime())
-    .filter((s) => s <= t)
-  const maxStartedStart = startedStarts.length ? Math.max(...startedStarts) : -Infinity
 
   const all: EffectiveStep[] = raw.map(({ step, day }) => ({
     step,
@@ -62,11 +54,16 @@ export function flattenSteps(roadmap: Roadmap, now: Date): EffectiveStep[] {
     dayLabel: day.label,
     start: effectiveStart(step),
     end: effectiveEnd(step),
-    status: computeStatus(step, now, maxStartedStart),
+    status: computeStatus(step, now),
     skipped: step.override === 'skipped',
   }))
 
   return all.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+}
+
+/** Steps that should appear on the dashboard right now (started but not closed). */
+export function getActiveSteps(steps: EffectiveStep[]): EffectiveStep[] {
+  return steps.filter((s) => s.status === 'in-progress' || s.status === 'late')
 }
 
 /** The step that best represents "where we are now". */

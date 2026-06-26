@@ -55,7 +55,7 @@ export function DashboardPage() {
       >
         <StatCard
           icon={Timer}
-          label="Fin du week-end dans"
+          label="Fin du tournage dans"
           value={formatLongCountdown(endMs)}
         />
         <StatCard
@@ -75,15 +75,28 @@ export function DashboardPage() {
 
       {lateSteps.length > 0 && <DelayManager step={lateSteps[0]} now={now} />}
 
-      {actives.length > 1 ? (
+      {actives.length > 0 ? (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
-            <Layers className="size-4 text-primary" />
-            {actives.length} étapes en parallèle
-          </div>
-          <div className="grid items-stretch gap-4 xl:grid-cols-2">
+          {actives.length > 1 && (
+            <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+              <Layers className="size-4 text-primary" />
+              {actives.length} étapes en parallèle
+            </div>
+          )}
+          <div
+            className={cn(
+              'grid items-stretch gap-4',
+              actives.length > 1 && 'xl:grid-cols-2',
+            )}
+          >
             {actives.map((s) => (
-              <CurrentStepCard key={s.step.id} current={s} now={now} emphasis={false} />
+              <CurrentStepCard
+                key={s.step.id}
+                current={s}
+                now={now}
+                emphasis={actives.length === 1}
+                next={actives.length === 1 ? next : undefined}
+              />
             ))}
           </div>
         </div>
@@ -91,7 +104,12 @@ export function DashboardPage() {
         <CurrentStepCard current={current} next={next} now={now} />
       )}
 
-      <Timeline steps={steps} currentId={current?.step.id} progressRatio={progress.ratio} />
+      <Timeline
+        steps={steps}
+        currentId={current?.step.id}
+        activeIds={actives.map((s) => s.step.id)}
+        progressRatio={progress.ratio}
+      />
     </div>
   )
 }

@@ -61,7 +61,7 @@ export function StepEditor({ step, isNew, onSave, onCancel, onDelete }: StepEdit
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-border/60 bg-muted/20 p-3">
+    <div className="min-w-0 space-y-3 rounded-xl border border-border/60 bg-muted/20 p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -114,23 +114,23 @@ export function StepEditor({ step, isNew, onSave, onCancel, onDelete }: StepEdit
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+        <div className="min-w-0 space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">Début</label>
           <Input
             type="datetime-local"
             value={toDatetimeLocal(draft.start)}
             onChange={(e) => patch({ start: fromDatetimeLocal(e.target.value) })}
-            className="h-9 font-mono text-sm"
+            className="datetime-field h-9 min-w-0 max-w-full px-2 font-mono text-xs sm:px-3 sm:text-sm"
           />
         </div>
-        <div className="space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">Fin</label>
           <Input
             type="datetime-local"
             value={toDatetimeLocal(draft.end)}
             onChange={(e) => patch({ end: fromDatetimeLocal(e.target.value) })}
-            className="h-9 font-mono text-sm"
+            className="datetime-field h-9 min-w-0 max-w-full px-2 font-mono text-xs sm:px-3 sm:text-sm"
           />
         </div>
       </div>
@@ -182,7 +182,7 @@ export function StepEditor({ step, isNew, onSave, onCancel, onDelete }: StepEdit
         <TagEditor
           items={draft.details}
           onChange={(details) => patch({ details })}
-          placeholder="Plan 1, Plan 2…"
+          placeholder="Notes.."
           tone="gear"
         />
       </div>

@@ -137,4 +137,16 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /* datetime-local has a large intrinsic width on mobile WebKit */
+  .datetime-field {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .datetime-field::-webkit-date-and-time-value {
+    min-width: 0;
+    text-align: left;
+  }
 }

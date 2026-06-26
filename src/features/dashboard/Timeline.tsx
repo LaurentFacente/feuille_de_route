@@ -10,16 +10,18 @@ import { formatHm } from '@/lib/time'
 interface TimelineProps {
   steps: EffectiveStep[]
   currentId?: string
+  activeIds?: string[]
   progressRatio: number
 }
 
-export function Timeline({ steps, currentId, progressRatio }: TimelineProps) {
+export function Timeline({ steps, currentId, activeIds, progressRatio }: TimelineProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const currentRef = useRef<HTMLButtonElement>(null)
+  const highlightIds = activeIds?.length ? activeIds : currentId ? [currentId] : []
 
   useEffect(() => {
     currentRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-  }, [currentId])
+  }, [highlightIds.join(',')])
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
@@ -37,11 +39,12 @@ export function Timeline({ steps, currentId, progressRatio }: TimelineProps) {
       <div ref={scrollRef} className="no-scrollbar flex gap-2 overflow-x-auto pb-2">
         {steps.map((s, i) => {
           const cfg = STATUS_CONFIG[s.status]
-          const isCurrent = s.step.id === currentId
+          const isCurrent = highlightIds.includes(s.step.id)
+          const isScrollTarget = highlightIds[0] === s.step.id
           return (
             <div key={s.step.id} className="flex items-center gap-2">
               <motion.button
-                ref={isCurrent ? currentRef : undefined}
+                ref={isScrollTarget ? currentRef : undefined}
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}

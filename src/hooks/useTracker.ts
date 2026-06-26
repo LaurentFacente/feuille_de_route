@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useRoadmapStore } from '@/features/roadmap/store'
 import {
   flattenSteps,
+  getActiveSteps,
   getCurrentStep,
   getNextStep,
   getProgress,
@@ -34,8 +35,8 @@ export function useTracker(): TrackerSnapshot {
     const steps = flattenSteps(roadmap, now)
     const current = getCurrentStep(steps)
     const next = getNextStep(steps, current)
+    const actives = getActiveSteps(steps)
     const lateSteps = steps.filter((s) => s.status === 'late')
-    const actives = steps.filter((s) => s.status === 'in-progress' || s.status === 'late')
     return {
       now,
       steps,

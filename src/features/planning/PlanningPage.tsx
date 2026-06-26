@@ -131,8 +131,8 @@ function PlanningRow({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden border-t border-border/60"
           >
-            <div className="grid gap-4 p-4 lg:grid-cols-2">
-              <div className="space-y-3">
+            <div className="grid min-w-0 gap-4 p-4 lg:grid-cols-2">
+              <div className="min-w-0 space-y-3">
                 <StepEditor
                   step={s.step}
                   isNew={isNew}
