@@ -114,6 +114,7 @@ export async function insertStep(row: {
   participants: string[]
   equipment: string[]
   vehicles: string[]
+  shots: string[]
   details: string[]
   override: string
   shift_minutes: number
@@ -285,6 +286,7 @@ export async function replaceRoadmap(projectId: string, roadmap: Roadmap): Promi
               participants: s.participants,
               equipment: s.equipment,
               vehicles: s.vehicles,
+              shots: s.shots,
               details: s.details,
               override: s.override,
               shift_minutes: s.shiftMinutes,

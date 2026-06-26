@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { initShotListSync } from '@/features/shotlist/store'
 import { initRoadmapSync, useRoadmapStore } from './store'
 
 /**
@@ -13,8 +14,12 @@ export function RoadmapProvider({ children }: { children: ReactNode }) {
   const load = useRoadmapStore((s) => s.load)
 
   useEffect(() => {
-    const unsubscribe = initRoadmapSync()
-    return unsubscribe
+    const unsubscribeRoadmap = initRoadmapSync()
+    const unsubscribeShots = initShotListSync()
+    return () => {
+      unsubscribeRoadmap()
+      unsubscribeShots()
+    }
   }, [])
 
   if (status === 'idle' || status === 'loading') {

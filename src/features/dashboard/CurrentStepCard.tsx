@@ -4,6 +4,8 @@ import {
   MapPin,
   Users,
   Camera,
+  Clapperboard,
+  Check,
   ArrowRight,
   CheckCircle2,
   RotateCcw,
@@ -12,6 +14,8 @@ import {
 } from 'lucide-react'
 import type { EffectiveStep } from '@/features/roadmap/roadmap.utils'
 import { useRoadmapStore } from '@/features/roadmap/store'
+import { useShotListStore } from '@/features/shotlist/store'
+import { resolveShot } from '@/features/shotlist/shotList.utils'
 import { STATUS_CONFIG, StatusBadge } from '@/features/roadmap/status'
 import { Button } from '@/components/ui/button'
 import { CommentsPanel } from '@/features/comments/CommentsPanel'
@@ -53,6 +57,37 @@ function TagRow({
             {item}
           </span>
         ))}
+      </div>
+    </div>
+  )
+}
+
+function ShotsRow({ shots }: { shots: string[] }) {
+  const checked = useShotListStore((s) => s.checked)
+  if (!shots.length) return null
+  return (
+    <div className="flex items-start gap-2.5">
+      <Clapperboard className="mt-1 size-4 shrink-0 text-muted-foreground" />
+      <div className="flex flex-wrap gap-1.5">
+        {shots.map((planId) => {
+          const resolved = resolveShot(planId)
+          const isChecked = Boolean(checked[planId])
+          const label = resolved ? `${resolved.visuel.name} · ${resolved.plan.label}` : planId
+          return (
+            <span
+              key={planId}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-sm font-semibold',
+                isChecked
+                  ? 'bg-status-done/15 text-status-done line-through'
+                  : 'bg-accent text-accent-foreground',
+              )}
+            >
+              {isChecked && <Check className="size-3.5 shrink-0" strokeWidth={3} />}
+              {label}
+            </span>
+          )
+        })}
       </div>
     </div>
   )
@@ -141,6 +176,7 @@ export function CurrentStepCard({ current, next, now, emphasis = true }: Current
           <div className="mt-5 space-y-3">
             <TagRow icon={Users} items={current.step.participants} tone="people" />
             <TagRow icon={Camera} items={current.step.equipment} tone="gear" />
+            <ShotsRow shots={current.step.shots} />
           </div>
 
           {current.step.details.length > 0 && (

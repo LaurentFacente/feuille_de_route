@@ -6,6 +6,7 @@ import { RegiePage } from '@/features/regie/RegiePage'
 import { TeamPage } from '@/features/team/TeamPage'
 import { VehiclesPage } from '@/features/vehicles/VehiclesPage'
 import { ChecklistsPage } from '@/features/checklists/ChecklistsPage'
+import { ShotListPage } from '@/features/shotlist/ShotListPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/equipe" element={<TeamPage />} />
         <Route path="/vehicules" element={<VehiclesPage />} />
         <Route path="/checklists" element={<ChecklistsPage />} />
+        <Route path="/shot-list" element={<ShotListPage />} />
         <Route path="/reglages" element={<SettingsPage />} />
       </Routes>
     </AppShell>

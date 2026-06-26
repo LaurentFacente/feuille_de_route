@@ -85,6 +85,7 @@ async function seed() {
             participants: s.participants,
             equipment: s.equipment,
             vehicles: s.vehicles,
+            shots: s.shots,
             details: s.details,
             override: s.override,
             shift_minutes: s.shiftMinutes,

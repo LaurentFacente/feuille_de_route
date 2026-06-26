@@ -53,6 +53,7 @@ export type StepRow = {
   participants: string[]
   equipment: string[]
   vehicles: string[]
+  shots: string[]
   details: string[]
   override: string
   shift_minutes: number
@@ -161,6 +162,13 @@ export type StepPersonRow = { step_id: string; person_id: string }
 export type StepVehicleRow = { step_id: string; vehicle_id: string }
 export type StepMaterialRow = { step_id: string; material_id: string }
 
+export type ShotCheckRow = {
+  project_id: string
+  plan_id: string
+  checked: boolean
+  updated_at: Timestamp
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -178,6 +186,7 @@ export type Database = {
       step_people: Table<StepPersonRow>
       step_vehicles: Table<StepVehicleRow>
       step_materials: Table<StepMaterialRow>
+      shot_checks: Table<ShotCheckRow>
     }
     Views: Record<string, never>
     Functions: Record<string, never>

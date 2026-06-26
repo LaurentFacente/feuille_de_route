@@ -29,6 +29,8 @@ export interface Step {
   equipment: string[]
   /** Vehicle names assigned to this step */
   vehicles: string[]
+  /** Shot List plan ids linked to this step (see features/shotlist) */
+  shots: string[]
   /** Detail bullet points (plans, sub-steps, objectives) */
   details: string[]
   /** Manual control over the auto status (delay management) */

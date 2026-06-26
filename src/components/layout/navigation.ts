@@ -5,6 +5,7 @@ import {
   Users,
   Car,
   ListChecks,
+  Clapperboard,
   Settings2,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -23,5 +24,6 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/equipe', label: 'Équipe', short: 'Équipe', Icon: Users },
   { to: '/vehicules', label: 'Véhicules', short: 'Autos', Icon: Car },
   { to: '/checklists', label: 'Checklists', short: 'Check', Icon: ListChecks },
+  { to: '/shot-list', label: 'Shot List', short: 'Shots', Icon: Clapperboard },
   { to: '/reglages', label: 'Réglages', short: 'Plus', Icon: Settings2 },
 ]

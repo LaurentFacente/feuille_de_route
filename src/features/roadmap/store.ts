@@ -226,6 +226,7 @@ export const useRoadmapStore = create<RoadmapState>()((set, get) => {
             participants: merged.participants,
             equipment: merged.equipment,
             vehicles: merged.vehicles,
+            shots: merged.shots,
             details: merged.details,
             override: merged.override,
             shift_minutes: merged.shiftMinutes,

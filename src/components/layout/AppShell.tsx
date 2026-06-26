@@ -95,7 +95,10 @@ function AppShellLayout({ children }: { children: ReactNode }) {
       </motion.div>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-7 border-t border-border/60 glass pb-safe md:hidden">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-30 grid border-t border-border/60 glass pb-safe md:hidden"
+        style={{ gridTemplateColumns: `repeat(${NAV_ITEMS.length}, minmax(0, 1fr))` }}
+      >
         {NAV_ITEMS.map(({ to, short, Icon }) => (
           <NavLink
             key={to}

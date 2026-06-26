@@ -8,6 +8,7 @@ import {
   peopleOptions,
   vehicleOptions,
 } from '@/features/planning/stepResources.utils'
+import { ShotMultiSelect } from '@/features/shotlist/ShotMultiSelect'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { TagEditor } from '@/components/common/TagEditor'
@@ -31,6 +32,7 @@ function stepFieldsEqual(a: Step, b: Step): boolean {
     a.participants.join('\0') === b.participants.join('\0') &&
     a.equipment.join('\0') === b.equipment.join('\0') &&
     a.vehicles.join('\0') === b.vehicles.join('\0') &&
+    a.shots.join('\0') === b.shots.join('\0') &&
     a.details.join('\0') === b.details.join('\0')
   )
 }
@@ -167,7 +169,16 @@ export function StepEditor({ step, isNew, onSave, onCancel, onDelete }: StepEdit
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground">Détails / plans</label>
+        <label className="text-xs font-semibold text-muted-foreground">Plans (Shot List)</label>
+        <ShotMultiSelect
+          value={draft.shots}
+          onChange={(shots) => patch({ shots })}
+          placeholder="Choisir des plans…"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground">Détails / notes</label>
         <TagEditor
           items={draft.details}
           onChange={(details) => patch({ details })}

@@ -35,6 +35,7 @@ export function defaultNewStep(day: Day): Omit<Step, 'id' | 'comments'> {
     participants: [],
     equipment: [],
     vehicles: [],
+    shots: [],
     details: [],
     override: 'auto',
     shiftMinutes: 0,

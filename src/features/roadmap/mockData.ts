@@ -42,6 +42,7 @@ function step(seed: StepSeed): Step {
     participants: seed.participants ?? [],
     equipment: seed.equipment ?? [],
     vehicles: seed.vehicles ?? [],
+    shots: [],
     details: seed.details ?? [],
     override: 'auto',
     shiftMinutes: 0,
